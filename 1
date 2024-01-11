@@ -1,32 +1,27 @@
-func findInstanceRegion(instanceID string) (string, string, error) {
+func findInstanceRegion(instanceID string) (string, error) {
     // Get the list of regions
     cmd := exec.Command("aws", "ec2", "describe-regions", "--query", "Regions[].RegionName", "--output", "text")
     var out bytes.Buffer
     cmd.Stdout = &out
     err := cmd.Run()
     if err != nil {
-        return "", "", err
+        return "", err
     }
     regions := strings.Fields(out.String())
 
     // Iterate over each region and check for the instance
     for _, region := range regions {
-        cmd = exec.Command("aws", "ec2", "describe-instances", "--region", region, "--instance-ids", instanceID, "--query", "Reservations[*].Instances[*].{Name: Tags[?Key=='Name'].Value | [0], Region: Placement.AvailabilityZone}", "--output", "text")
+        cmd = exec.Command("aws", "ec2", "describe-instances", "--region", region, "--instance-ids", instanceID)
         var regionOut bytes.Buffer
         cmd.Stdout = &regionOut
-        if err := cmd.Run(); err == nil {
-            output := strings.TrimSpace(regionOut.String())
-            if output != "" {
-                // Split the output to get the name and the region
-                parts := strings.Split(output, "\t")
-                if len(parts) >= 2 {
-                    return parts[1], parts[0], nil
-                }
-                return region, "", nil
-            }
+        err := cmd.Run()
+        if err == nil {
+            // Instance found in this region
+            return region, nil
         }
+        // Check for specific 'instance not found' error if needed
+        // If not, just continue to the next iteration
     }
-    return "", "", fmt.Errorf("instance ID %s not found in any region", instanceID)
+    return "", fmt.Errorf("instance ID %s not found in any region", instanceID)
 }
-aws ec2 describe-instances --region <region> --instance-ids <instanceID> --query "Reservations[*].Instances[*].{Name: Tags[?Key=='Name'].Value | [0], Region: Placement.AvailabilityZone}" --output text
 
