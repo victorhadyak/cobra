@@ -1,3 +1,20 @@
+func connectInstance(cmd *cobra.Command, args []string) {
+    instanceID := args[0]
+    region, err := findInstanceRegion(instanceID)
+    if err != nil {
+        fmt.Println("Error finding instance:", err)
+        return
+    }
+
+    fmt.Printf("Connecting to instance %s in region \"%s\"...\n", instanceID, region)
+
+    err = startSSMSession(instanceID, region)
+    if err != nil {
+        fmt.Println("Error starting SSM session:", err)
+        return
+    }
+}
+
 func findInstanceRegion(instanceID string) (string, error) {
     // Get the list of regions
     cmd := exec.Command("aws", "ec2", "describe-regions", "--query", "Regions[].RegionName", "--output", "text")
@@ -19,8 +36,7 @@ func findInstanceRegion(instanceID string) (string, error) {
             // Instance found in this region
             return region, nil
         }
-        // Check for specific 'instance not found' error if needed
-        // If not, just continue to the next iteration
+        // Continue to the next iteration
     }
     return "", fmt.Errorf("instance ID %s not found in any region", instanceID)
 }
