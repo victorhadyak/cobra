@@ -1,40 +1,37 @@
-package main
+func findInstanceRegion(instanceID string) (string, string, error) {
+    // ... (previous code to get list of regions) ...
 
-import (
-    "bytes"
-    "fmt"
-    "os"
-    "os/exec"
-    "strings"
-    "github.com/spf13/cobra"
-)
-
-func main() {
-    var rootCmd = &cobra.Command{
-        Use:   "ssm-cli",
-        Short: "SSM CLI to connect to EC2 instances across regions",
-        Run: func(cmd *cobra.Command, args []string) {
-            // Command logic here
-        },
+    for _, region := range regions {
+        cmd := exec.Command("aws", "ec2", "describe-instances", "--region", region, "--instance-ids", instanceID, "--query", "Reservations[*].Instances[*].{Name: Tags[?Key=='Name'].Value | [0], Region: Placement.AvailabilityZone}", "--output", "text")
+        var regionOut bytes.Buffer
+        cmd.Stdout = &regionOut
+        if err := cmd.Run(); err == nil {
+            output := strings.TrimSpace(regionOut.String())
+            if output != "" {
+                // Split the output to get the name and the region
+                parts := strings.Split(output, "\t")
+                if len(parts) >= 2 {
+                    return parts[1], parts[0], nil
+                }
+                return region, "", nil
+            }
+        }
     }
-
-    var connectCmd = &cobra.Command{
-        Use:   "connect [instance-id]",
-        Short: "Connect to an EC2 instance",
-        Args:  cobra.MinimumNArgs(1),
-        Run:   connectInstance,
-    }
-
-    rootCmd.AddCommand(connectCmd)
-    rootCmd.Execute()
+    return "", "", fmt.Errorf("instance ID %s not found in any region", instanceID)
 }
 
 func connectInstance(cmd *cobra.Command, args []string) {
     instanceID := args[0]
-    region, err := findInstanceRegion(instanceID)
+    region, instanceName, err := findInstanceRegion(instanceID)
     if err != nil {
         fmt.Println("Error finding instance:", err)
         return
+    }
+
+    if instanceName != "" {
+        fmt.Printf("Connecting to \"%s\" in region \"%s\"...\n", instanceName, region)
+    } else {
+        fmt.Printf("Connecting to instance in region \"%s\"...\n", region)
     }
 
     err = startSSMSession(instanceID, region)
@@ -42,32 +39,4 @@ func connectInstance(cmd *cobra.Command, args []string) {
         fmt.Println("Error starting SSM session:", err)
         return
     }
-}
-
-func findInstanceRegion(instanceID string) (string, error) {
-    // Run AWS CLI command to describe instances in all regions
-    // and parse output to find the region for the given instance ID
-    cmd := exec.Command("bash", "-c", "aws ec2 describe-regions --query 'Regions[].RegionName' --output text | xargs -I {} aws ec2 describe-instances --region {} --instance-ids "+instanceID+" --query 'Reservations[0].Instances[0].InstanceId' --output text")
-    var out bytes.Buffer
-    cmd.Stdout = &out
-    err := cmd.Run()
-    if err != nil {
-        return "", err
-    }
-
-    // Process the output to extract the region
-    output := strings.TrimSpace(out.String())
-    if output == "None" || output == "" {
-        return "", fmt.Errorf("instance ID %s not found in any region", instanceID)
-    }
-    return output, nil
-}
-
-func startSSMSession(instanceID, region string) error {
-    // Run AWS CLI command to start a Session Manager session
-    cmd := exec.Command("aws", "ssm", "start-session", "--target", instanceID, "--region", region)
-    cmd.Stdout = os.Stdout
-    cmd.Stderr = os.Stderr
-    cmd.Stdin = os.Stdin
-    return cmd.Run()
 }
