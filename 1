@@ -1,13 +1,11 @@
 package main
 
 import (
+    "bytes"
     "fmt"
     "os"
-
-    "github.com/aws/aws-sdk-go/aws"
-    "github.com/aws/aws-sdk-go/aws/session"
-    "github.com/aws/aws-sdk-go/service/ec2"
-    "github.com/aws/aws-sdk-go/service/ssm"
+    "os/exec"
+    "strings"
     "github.com/spf13/cobra"
 )
 
@@ -47,13 +45,29 @@ func connectInstance(cmd *cobra.Command, args []string) {
 }
 
 func findInstanceRegion(instanceID string) (string, error) {
-    // Logic to find the instance region
+    // Run AWS CLI command to describe instances in all regions
+    // and parse output to find the region for the given instance ID
+    cmd := exec.Command("bash", "-c", "aws ec2 describe-regions --query 'Regions[].RegionName' --output text | xargs -I {} aws ec2 describe-instances --region {} --instance-ids "+instanceID+" --query 'Reservations[0].Instances[0].InstanceId' --output text")
+    var out bytes.Buffer
+    cmd.Stdout = &out
+    err := cmd.Run()
+    if err != nil {
+        return "", err
+    }
+
+    // Process the output to extract the region
+    output := strings.TrimSpace(out.String())
+    if output == "None" || output == "" {
+        return "", fmt.Errorf("instance ID %s not found in any region", instanceID)
+    }
+    return output, nil
 }
 
 func startSSMSession(instanceID, region string) error {
-    // Logic to start SSM session
-}
-
-func main() {
-    // Main logic here
+    // Run AWS CLI command to start a Session Manager session
+    cmd := exec.Command("aws", "ssm", "start-session", "--target", instanceID, "--region", region)
+    cmd.Stdout = os.Stdout
+    cmd.Stderr = os.Stderr
+    cmd.Stdin = os.Stdin
+    return cmd.Run()
 }
