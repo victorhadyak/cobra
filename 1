@@ -28,3 +28,5 @@ func findInstanceRegion(instanceID string) (string, string, error) {
     }
     return "", "", fmt.Errorf("instance ID %s not found in any region", instanceID)
 }
+aws ec2 describe-instances --region <region> --instance-ids <instanceID> --query "Reservations[*].Instances[*].{Name: Tags[?Key=='Name'].Value | [0], Region: Placement.AvailabilityZone}" --output text
+
