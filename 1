@@ -1,8 +1,17 @@
 func findInstanceRegion(instanceID string) (string, string, error) {
-    // ... (previous code to get list of regions) ...
+    // Get the list of regions
+    cmd := exec.Command("aws", "ec2", "describe-regions", "--query", "Regions[].RegionName", "--output", "text")
+    var out bytes.Buffer
+    cmd.Stdout = &out
+    err := cmd.Run()
+    if err != nil {
+        return "", "", err
+    }
+    regions := strings.Fields(out.String())
 
+    // Iterate over each region and check for the instance
     for _, region := range regions {
-        cmd := exec.Command("aws", "ec2", "describe-instances", "--region", region, "--instance-ids", instanceID, "--query", "Reservations[*].Instances[*].{Name: Tags[?Key=='Name'].Value | [0], Region: Placement.AvailabilityZone}", "--output", "text")
+        cmd = exec.Command("aws", "ec2", "describe-instances", "--region", region, "--instance-ids", instanceID, "--query", "Reservations[*].Instances[*].{Name: Tags[?Key=='Name'].Value | [0], Region: Placement.AvailabilityZone}", "--output", "text")
         var regionOut bytes.Buffer
         cmd.Stdout = &regionOut
         if err := cmd.Run(); err == nil {
@@ -18,25 +27,4 @@ func findInstanceRegion(instanceID string) (string, string, error) {
         }
     }
     return "", "", fmt.Errorf("instance ID %s not found in any region", instanceID)
-}
-
-func connectInstance(cmd *cobra.Command, args []string) {
-    instanceID := args[0]
-    region, instanceName, err := findInstanceRegion(instanceID)
-    if err != nil {
-        fmt.Println("Error finding instance:", err)
-        return
-    }
-
-    if instanceName != "" {
-        fmt.Printf("Connecting to \"%s\" in region \"%s\"...\n", instanceName, region)
-    } else {
-        fmt.Printf("Connecting to instance in region \"%s\"...\n", region)
-    }
-
-    err = startSSMSession(instanceID, region)
-    if err != nil {
-        fmt.Println("Error starting SSM session:", err)
-        return
-    }
 }
