@@ -1,27 +1,48 @@
-func generateTemporaryCredentials() (string, error) {
-    roleName := "<role-name>" // Set the role name accordingly
-    cmd := exec.Command("aws", "session", "generate", "--role-name", roleName)
-    var out bytes.Buffer
-    cmd.Stdout = &out
-    err := cmd.Run()
-    if err != nil {
-        return "", err
+import (
+    "os"
+    "os/exec"
+    "os/signal"
+    "syscall"
+    // ... other imports ...
+)
+
+func startSSMSession(instanceID, region string) error {
+    cmd := exec.Command("aws", "ssm", "start-session", "--target", instanceID, "--region", region)
+
+    // Set up the command to use the current process's stdin, stdout, and stderr
+    cmd.Stdin = os.Stdin
+    cmd.Stdout = os.Stdout
+    cmd.Stderr = os.Stderr
+
+    // Start the command in the background
+    if err := cmd.Start(); err != nil {
+        return err
     }
 
-    // Here, parse the output to extract any necessary information, like a URL or temporary credentials
-    credentialsOutput := out.String()
+    // Set up a channel to receive interrupt signals
+    sigChan := make(chan os.Signal, 1)
+    signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 
-    return credentialsOutput, nil
-}
-
-func main() {
-    // First, generate temporary credentials
-    creds, err := generateTemporaryCredentials()
-    if err != nil {
-        fmt.Println("Error generating temporary credentials:", err)
-        return
+    // Wait for an interrupt or the command to finish
+    select {
+    case <-sigChan:
+        // Interrupt signal received, terminate the command
+        if err := cmd.Process.Signal(syscall.SIGTERM); err != nil {
+            return err
+        }
+    case <-cmdDone(cmd):
+        // Command completed
     }
-    fmt.Println("Credentials generated:", creds)
 
-    // ... rest of your main function ...
+    return cmd.Wait()
 }
+
+func cmdDone(cmd *exec.Cmd) <-chan struct{} {
+    done := make(chan struct{})
+    go func() {
+        cmd.Wait()
+        close(done)
+    }()
+    return done
+}
+
