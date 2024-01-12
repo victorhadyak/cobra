@@ -1,0 +1,27 @@
+func generateTemporaryCredentials() (string, error) {
+    roleName := "<role-name>" // Set the role name accordingly
+    cmd := exec.Command("aws", "session", "generate", "--role-name", roleName)
+    var out bytes.Buffer
+    cmd.Stdout = &out
+    err := cmd.Run()
+    if err != nil {
+        return "", err
+    }
+
+    // Here, parse the output to extract any necessary information, like a URL or temporary credentials
+    credentialsOutput := out.String()
+
+    return credentialsOutput, nil
+}
+
+func main() {
+    // First, generate temporary credentials
+    creds, err := generateTemporaryCredentials()
+    if err != nil {
+        fmt.Println("Error generating temporary credentials:", err)
+        return
+    }
+    fmt.Println("Credentials generated:", creds)
+
+    // ... rest of your main function ...
+}
