@@ -1,1 +1,76 @@
+AWS EC2 Session Manager CLI Tool
+Description
+As the bastion service will be decommissioned soon, this CLI tool has been prepared to facilitate easy connection to desired EC2 instances in our AWS account. It simplifies the process of connecting to an instance using AWS Systems Manager Session Manager, abstracting the need to manage SSH keys or bastion hosts.
 
+Prerequisites
+AWS CLI installed and configured with necessary permissions.
+Go installed if you wish to build from source (optional).
+Installation
+Downloading the Executable
+Go to the Releases page of this repository.
+Download the appropriate executable for your Mac:
+For Intel-based Mac users: Download ssm-cli from the macos-amd64 directory.
+For Apple M1 Mac users: Download ssm-cli from the macos-arm64 directory.
+Adding to PATH
+Move the downloaded ssm-cli to a suitable directory, for example, /usr/local/bin:
+mv path/to/downloaded/ssm-cli /usr/local/bin/ssm-cli
+Ensure that /usr/local/bin is in your PATH. You can check this by running:
+
+echo $PATH
+If /usr/local/bin is not in your PATH, you can add it by adding the following line to your ~/.bash_profile, ~/.bashrc, or ~/.zshrc:
+
+
+export PATH="/usr/local/bin:$PATH"
+After adding it, you may need to reload your profile or open a new terminal window to apply the changes.
+
+Usage
+To connect to an EC2 instance:
+ssm-cli connect <instance-id>
+To generate a session:
+
+
+ssm-cli generate
+AWS Commands Used
+This tool internally uses the following AWS CLI commands:
+
+To list available AWS regions:
+
+sh
+Copy code
+aws ec2 describe-regions --query "Regions[].RegionName" --output text
+To describe EC2 instances in a specific region:
+
+sh
+Copy code
+aws ec2 describe-instances --region <region> --instance-ids <instance-id>
+To start an AWS Systems Manager Session Manager session:
+
+sh
+Copy code
+aws ssm start-session --target <instance-id> --region <region>
+Contributing
+Feel free to contribute to this tool by submitting pull requests or issues on GitHub.
+
+## Description
+
+As the bastion service will be decommissioned soon, this CLI tool has been prepared to facilitate easy connection to desired EC2 instances in our AWS account. It simplifies the process of connecting to an instance using AWS Systems Manager Session Manager, abstracting the need to manage SSH keys or bastion hosts.
+
+## Prerequisites
+
+- AWS CLI installed and configured with necessary permissions.
+- Go installed if you wish to build from source (optional).
+
+## Installation
+
+### Downloading the Executable
+
+1. Go to the [Releases](https://github.com/yourusername/ssm-cli/releases) page of this repository.
+2. Download the appropriate executable for your Mac:
+   - For Intel-based Mac users: Download `ssm-cli` from the `macos-amd64` directory.
+   - For Apple M1 Mac users: Download `ssm-cli` from the `macos-arm64` directory.
+
+### Adding to PATH
+
+1. Move the downloaded `ssm-cli` to a suitable directory, for example, `/usr/local/bin`:
+   ```sh
+   mv path/to/downloaded/ssm-cli /usr/local/bin/ssm-cli
