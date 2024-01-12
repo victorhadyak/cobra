@@ -1,48 +1,9 @@
-import (
-    "os"
-    "os/exec"
-    "os/signal"
-    "syscall"
-    // ... other imports ...
-)
-
 func startSSMSession(instanceID, region string) error {
-    cmd := exec.Command("aws", "ssm", "start-session", "--target", instanceID, "--region", region)
+    // Prepare the arguments for the AWS CLI command
+    args := []string{"aws", "ssm", "start-session", "--target", instanceID, "--region", region}
 
-    // Set up the command to use the current process's stdin, stdout, and stderr
-    cmd.Stdin = os.Stdin
-    cmd.Stdout = os.Stdout
-    cmd.Stderr = os.Stderr
-
-    // Start the command in the background
-    if err := cmd.Start(); err != nil {
-        return err
-    }
-
-    // Set up a channel to receive interrupt signals
-    sigChan := make(chan os.Signal, 1)
-    signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
-
-    // Wait for an interrupt or the command to finish
-    select {
-    case <-sigChan:
-        // Interrupt signal received, terminate the command
-        if err := cmd.Process.Signal(syscall.SIGTERM); err != nil {
-            return err
-        }
-    case <-cmdDone(cmd):
-        // Command completed
-    }
-
-    return cmd.Wait()
-}
-
-func cmdDone(cmd *exec.Cmd) <-chan struct{} {
-    done := make(chan struct{})
-    go func() {
-        cmd.Wait()
-        close(done)
-    }()
-    return done
+    // Use syscall.Exec to replace the current process with the AWS CLI command
+    // The command will take over the terminal and handle signals directly
+    return syscall.Exec("/usr/bin/env", args, os.Environ())
 }
 
