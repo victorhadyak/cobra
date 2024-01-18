@@ -1,76 +1,34 @@
-AWS EC2 Session Manager CLI Tool
-Description
-As the bastion service will be decommissioned soon, this CLI tool has been prepared to facilitate easy connection to desired EC2 instances in our AWS account. It simplifies the process of connecting to an instance using AWS Systems Manager Session Manager, abstracting the need to manage SSH keys or bastion hosts.
 
-Prerequisites
-AWS CLI installed and configured with necessary permissions.
-Go installed if you wish to build from source (optional).
-Installation
-Downloading the Executable
-Go to the Releases page of this repository.
-Download the appropriate executable for your Mac:
-For Intel-based Mac users: Download ssm-cli from the macos-amd64 directory.
-For Apple M1 Mac users: Download ssm-cli from the macos-arm64 directory.
-Adding to PATH
-Move the downloaded ssm-cli to a suitable directory, for example, /usr/local/bin:
-mv path/to/downloaded/ssm-cli /usr/local/bin/ssm-cli
-Ensure that /usr/local/bin is in your PATH. You can check this by running:
+def get_regions():
+    """Get a list of all AWS regions."""
+    regions = subprocess.run(['aws', 'ec2', 'describe-regions', '--query', 'Regions[].RegionName', '--output', 'json'], capture_output=True, text=True)
+    return json.loads(regions.stdout)
 
-echo $PATH
-If /usr/local/bin is not in your PATH, you can add it by adding the following line to your ~/.bash_profile, ~/.bashrc, or ~/.zshrc:
+def get_instances(region):
+    """Get a list of all EC2 instance IDs in a specific region."""
+    instances = subprocess.run(['aws', 'ec2', 'describe-instances', '--region', region, '--query', 'Reservations[*].Instances[*].InstanceId', '--output', 'json'], capture_output=True, text=True)
+    instance_ids = json.loads(instances.stdout)
+    return [id for sublist in instance_ids for id in sublist]
 
+def add_tags(instance_ids, region):
+    """Add tags to a list of instances in a specified region."""
+    for instance_id in instance_ids:
+        tag_arguments = []
+        for tag in tags:
+            tag_arguments.append('Key={},Value={}'.format(tag['Key'], tag['Value']))
 
-export PATH="/usr/local/bin:$PATH"
-After adding it, you may need to reload your profile or open a new terminal window to apply the changes.
+        tag_string = ' '.join(tag_arguments)
+        subprocess.run(['aws', 'ec2', 'create-tags', '--resources', instance_id, '--tags', tag_string, '--region', region])
 
-Usage
-To connect to an EC2 instance:
-ssm-cli connect <instance-id>
-To generate a session:
+def main():
+    for region in get_regions():
+        print(f"Processing region: {region}")
+        instance_ids = get_instances(region)
+        if instance_ids:
+            print(f"Adding tags to instances in region: {region}")
+            add_tags(instance_ids, region)
+        else:
+            print(f"No instances found in region: {region}")
 
-
-ssm-cli generate
-AWS Commands Used
-This tool internally uses the following AWS CLI commands:
-
-To list available AWS regions:
-
-sh
-Copy code
-aws ec2 describe-regions --query "Regions[].RegionName" --output text
-To describe EC2 instances in a specific region:
-
-sh
-Copy code
-aws ec2 describe-instances --region <region> --instance-ids <instance-id>
-To start an AWS Systems Manager Session Manager session:
-
-sh
-Copy code
-aws ssm start-session --target <instance-id> --region <region>
-Contributing
-Feel free to contribute to this tool by submitting pull requests or issues on GitHub.
-
-## Description
-
-As the bastion service will be decommissioned soon, this CLI tool has been prepared to facilitate easy connection to desired EC2 instances in our AWS account. It simplifies the process of connecting to an instance using AWS Systems Manager Session Manager, abstracting the need to manage SSH keys or bastion hosts.
-
-## Prerequisites
-
-- AWS CLI installed and configured with necessary permissions.
-- Go installed if you wish to build from source (optional).
-
-## Installation
-
-### Downloading the Executable
-
-1. Go to the [Releases](https://github.com/yourusername/ssm-cli/releases) page of this repository.
-2. Download the appropriate executable for your Mac:
-   - For Intel-based Mac users: Download `ssm-cli` from the `macos-amd64` directory.
-   - For Apple M1 Mac users: Download `ssm-cli` from the `macos-arm64` directory.
-
-### Adding to PATH
-
-1. Move the downloaded `ssm-cli` to a suitable directory, for example, `/usr/local/bin`:
-   ```sh
-   mv path/to/downloaded/ssm-cli /usr/local/bin/ssm-cli
+if __name__ == "__main__":
+    main()
