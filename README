@@ -1,1 +1,3 @@
-
+tag_args = " ".join([f'Key={shlex.quote(tag["Key"])},Value={shlex.quote(tag["Value"])}' for tag in tags])
+        cmd = f'aws ec2 create-tags --resources {instance_id} --tags {tag_args} --region {region}'
+        subprocess.run(cmd, shell=True)
