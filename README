@@ -1,3 +1,19 @@
-tag_args = " ".join([f'Key={shlex.quote(tag["Key"])},Value={shlex.quote(tag["Value"])}' for tag in tags])
-        cmd = f'aws ec2 create-tags --resources {instance_id} --tags {tag_args} --region {region}'
-        subprocess.run(cmd, shell=True)
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  </head>
+  <body>
+    <form action="PRESIGNED_POST_URL" method="post" enctype="multipart/form-data">
+      <input type="hidden" name="key" value="PREGENERATED_KEY" />
+      <input type="hidden" name="AWSAccessKeyId" value="PREGENERATED_ACCESS_KEY_ID" />
+      <input type="hidden" name="policy" value="PREGENERATED_POLICY" />
+      <input type="hidden" name="signature" value="PREGENERATED_SIGNATURE" />
+      File: <input type="file" name="file" /> <br />
+      <input type="submit" name="submit" value="Upload to Amazon S3" />
+    </form>
+
+    <!-- Download Link/Button -->
+    <a href="PRESIGNED_GET_URL">Download File</a>
+  </body>
+</html>
+
