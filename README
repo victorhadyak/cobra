@@ -1,23 +1,21 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>File Upload to CloudFront</title>
-</head>
-<body>
-    <div class="container">
-        <h1>File Upload to CloudFront</h1>
+document.getElementById('uploadButton').addEventListener('click', function() {
+    var fileInput = document.getElementById('fileUpload');
+    var file = fileInput.files[0];
+    var formData = new FormData();
+    formData.append('file', file);
 
-        <!-- File Upload Input -->
-        <input type="file" id="fileUpload">
-        
-        <!-- Upload Button -->
-        <button id="uploadButton">Upload File</button>
-    </div>
-
-    <!-- JavaScript -->
-    <script>
-        // JavaScript code from the previous message goes here
-    </script>
-</body>
-</html>
+    fetch('YOUR_S3_BUCKET_UPLOAD_URL', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if(response.ok) {
+            document.getElementById('uploadStatus').innerText = 'Upload successful!';
+        } else {
+            document.getElementById('uploadStatus').innerText = 'Upload failed.';
+        }
+    })
+    .catch(error => {
+        document.getElementById('uploadStatus').innerText = 'Error: ' + error;
+    });
+});
