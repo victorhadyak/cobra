@@ -1,24 +1,51 @@
-document.getElementById("uploadForm").addEventListener("submit", function(event){
-    event.preventDefault();
+// CloudFront distribution domain
+const distributionDomain = 'https://qwerty.domain.cloudfront.net/upload';
 
-    // Fetch API to submit the form data
-    fetch(this.action, {
-        method: 'POST',
-        body: new FormData(this)
-    })
-    .then(response => {
-        if(response.ok) {
-            return response.text();
-        } else {
+// Get file input
+const fileInput = document.getElementById('fileUpload');
+let file;
+
+// Assign uploaded file
+fileInput.addEventListener('change', (e) => {
+    file = e.target.files[0];
+});
+
+// Upload button click handler
+const uploadButton = document.getElementById('uploadButton');
+uploadButton.addEventListener('click', uploadToCloudFront);
+
+// Upload function
+async function uploadToCloudFront() {
+    try {
+        // Generate signed URL
+        const signedUrl = generateSignedUrl();
+
+        // Upload file
+        const response = await fetch(signedUrl, {
+            method: 'PUT',
+            headers: {
+                "Content-Type": file.type
+            },
+            body: file
+        });
+
+        // Check response
+        if (!response.ok) {
             throw new Error('Upload failed');
         }
-    })
-    .then(data => {
-        // Display success message
-        alert("File uploaded successfully.");
-    })
-    .catch(error => {
-        // Display error message
-        alert("Failed to upload file.");
-    });
-});
+        console.log('File uploaded!');
+        alert('File uploaded successfully!');
+    } catch (error) {
+        console.error(error);
+        alert('Failed to upload file.');
+    }
+}
+
+// Generate signed URL function
+function generateSignedUrl() {
+    // Generate unique filename
+    const fileName = file.name;
+
+    // Create signed URL
+    return `${distributionDomain}/${fileName}?Expires=900&Key-Pair-Id=<KEY-PAIR-ID>&Signature=<SIGNATURE>`;
+}
