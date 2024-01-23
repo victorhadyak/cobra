@@ -1,22 +1,50 @@
-function uploadFile() {
-    var file = document.getElementById('fileUpload').files[0];
-    
-    // Replace with your actual upload URL
-    var uploadUrl = 'YOUR_UPLOAD_URL/' + file.name;
-
-    fetch(uploadUrl, {
-        method: 'PUT',
-        body: file // Send the file directly as the body
-    })
-    .then(response => {
-        if(response.ok) {
-            alert('Successfully Uploaded!');
-        } else {
-            throw new Error('Upload failed');
+<!doctype html>
+<html>
+<head>
+    <title>File Management</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
         }
-    })
-    .catch(error => {
-        console.error(error);
-        alert('Failed to upload file.');
-    });
-}
+        #container {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px;
+        }
+        #downloadButton, #uploadButton {
+            padding: 10px 15px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            background-color: #4CAF50; /* Green */
+            cursor: pointer;
+        }
+        #fileUpload {
+            margin-top: 20px;
+        }
+        .watermark {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <button id="downloadButton">Download</button>
+        <button id="uploadButton">Upload</button>
+    </div>
+    <input type="file" id="fileUpload">
+
+    <div class="watermark">
+        <p>Company Name<br>Team Name<br>All Rights Reserved<br>For Internal Use Only</p>
+    </div>
+
+    <script>
+        // JavaScript for handling upload and download goes here
+    </script>
+</body>
+</html>
