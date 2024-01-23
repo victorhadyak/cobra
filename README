@@ -1,45 +1,54 @@
-// CloudFront distribution domain
-const distributionDomain = 'https://qwerty.domain.cloudfront.net/upload';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>File Upload</title>
+</head>
+<body>
+    <div class="container">
+        <h1>File Upload to CloudFront</h1>
+        <input type="file" id="fileUpload">
+        <button id="uploadButton">Upload File</button>
+        <div id="uploadStatus"></div>
+    </div>
 
-// Get file input
-const fileInput = document.getElementById('fileUpload');
-let file;
+    <script>
+        // JavaScript code goes here
+    </script>
+</body>
+</html>
 
-// Assign uploaded file
-fileInput.addEventListener('change', (e) => {
-    file = e.target.files[0];
-});
+document.addEventListener('DOMContentLoaded', (event) => {
+    const distributionDomain = 'https://qwerty.domain.cloudfront.net/upload';
+    const fileInput = document.getElementById('fileUpload');
+    let file;
 
-// Upload button click handler
-const uploadButton = document.getElementById('uploadButton');
-uploadButton.addEventListener('click', uploadToCloudFront);
+    fileInput.addEventListener('change', (e) => {
+        file = e.target.files[0];
+    });
 
-// Upload function
-async function uploadToCloudFront() {
-    try {
-        // Generate unique filename
-        const fileName = file.name;
-        
-        // Create signed URL
-        const signedUrl = `${distributionDomain}/${fileName}`;
+    const uploadButton = document.getElementById('uploadButton');
+    uploadButton.addEventListener('click', async () => {
+        try {
+            const fileName = file.name;
+            const signedUrl = `${distributionDomain}/${fileName}`;
+            
+            const response = await fetch(signedUrl, {
+                method: 'PUT',
+                headers: {
+                    "Content-Type": file.type
+                },
+                body: file
+            });
 
-        // Upload file
-        const response = await fetch(signedUrl, {
-            method: 'PUT',
-            headers: {
-                "Content-Type": file.type
-            },
-            body: file
-        });
+            if (!response.ok) {
+                throw new Error('Upload failed');
+            }
 
-        // Check response
-        if (!response.ok) {
-            throw new Error('Upload failed');
+            document.getElementById('uploadStatus').innerText = 'File uploaded successfully!';
+        } catch (error) {
+            console.error(error);
+            document.getElementById('uploadStatus').innerText = 'Failed to upload file.';
         }
-        console.log('File uploaded!');
-        alert('File uploaded successfully!');
-    } catch (error) {
-        console.error(error);
-        alert('Failed to upload file.');
-    }
-}
+    });
+});
