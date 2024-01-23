@@ -1,21 +1,22 @@
-document.getElementById('uploadButton').addEventListener('click', function() {
-    var fileInput = document.getElementById('fileUpload');
-    var file = fileInput.files[0];
-    var formData = new FormData();
-    formData.append('file', file);
+// Existing script remains the same up to the fetch call...
 
-    fetch('YOUR_S3_BUCKET_UPLOAD_URL', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => {
-        if(response.ok) {
-            document.getElementById('uploadStatus').innerText = 'Upload successful!';
-        } else {
-            document.getElementById('uploadStatus').innerText = 'Upload failed.';
-        }
-    })
-    .catch(error => {
-        document.getElementById('uploadStatus').innerText = 'Error: ' + error;
-    });
+// Upload file
+fetch(signedUrl, {
+    method: 'PUT',
+    headers: {
+        "Content-Type": file.type
+    },
+    body: file
+})
+.then(response => {
+    if(response.ok) {
+        console.log('File uploaded!');
+        alert('File uploaded successfully!');
+    } else {
+        throw new Error('Upload failed');
+    }
+})
+.catch(error => {
+    console.error(error);
+    alert('Failed to upload file.');
 });
