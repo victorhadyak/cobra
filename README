@@ -1,51 +1,23 @@
-// CloudFront distribution domain
-const distributionDomain = 'https://qwerty.domain.cloudfront.net/upload';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>File Upload to CloudFront</title>
+</head>
+<body>
+    <div class="container">
+        <h1>File Upload to CloudFront</h1>
 
-// Get file input
-const fileInput = document.getElementById('fileUpload');
-let file;
+        <!-- File Upload Input -->
+        <input type="file" id="fileUpload">
+        
+        <!-- Upload Button -->
+        <button id="uploadButton">Upload File</button>
+    </div>
 
-// Assign uploaded file
-fileInput.addEventListener('change', (e) => {
-    file = e.target.files[0];
-});
-
-// Upload button click handler
-const uploadButton = document.getElementById('uploadButton');
-uploadButton.addEventListener('click', uploadToCloudFront);
-
-// Upload function
-async function uploadToCloudFront() {
-    try {
-        // Generate signed URL
-        const signedUrl = generateSignedUrl();
-
-        // Upload file
-        const response = await fetch(signedUrl, {
-            method: 'PUT',
-            headers: {
-                "Content-Type": file.type
-            },
-            body: file
-        });
-
-        // Check response
-        if (!response.ok) {
-            throw new Error('Upload failed');
-        }
-        console.log('File uploaded!');
-        alert('File uploaded successfully!');
-    } catch (error) {
-        console.error(error);
-        alert('Failed to upload file.');
-    }
-}
-
-// Generate signed URL function
-function generateSignedUrl() {
-    // Generate unique filename
-    const fileName = file.name;
-
-    // Create signed URL
-    return `${distributionDomain}/${fileName}?Expires=900&Key-Pair-Id=<KEY-PAIR-ID>&Signature=<SIGNATURE>`;
-}
+    <!-- JavaScript -->
+    <script>
+        // JavaScript code from the previous message goes here
+    </script>
+</body>
+</html>
