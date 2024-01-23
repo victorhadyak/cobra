@@ -1,37 +1,22 @@
-<!doctype html>
-<html>
-<head>
-    <title>Simple File Upload</title>
-    <script>
-        function uploadFile() {
-            var file = document.getElementById('fileUpload').files[0];
-            var formData = new FormData();
-            formData.append('file', file);
+function uploadFile() {
+    var file = document.getElementById('fileUpload').files[0];
+    
+    // Replace with your actual upload URL
+    var uploadUrl = 'YOUR_UPLOAD_URL/' + file.name;
 
-            // Replace with your server-side upload URL
-            var uploadUrl = 'YOUR_SERVER_SIDE_UPLOAD_URL';
-
-            fetch(uploadUrl, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => {
-                if(response.ok) {
-                    alert('Successfully Uploaded!');
-                } else {
-                    throw new Error('Upload failed');
-                }
-            })
-            .catch(error => {
-                console.error(error);
-                alert('Failed to upload file.');
-            });
+    fetch(uploadUrl, {
+        method: 'PUT',
+        body: file // Send the file directly as the body
+    })
+    .then(response => {
+        if(response.ok) {
+            alert('Successfully Uploaded!');
+        } else {
+            throw new Error('Upload failed');
         }
-    </script>
-</head>
-<body>
-    <input type="file" id="fileUpload">
-    <button onclick="uploadFile()">Upload</button>
-    <progress max="100" value="0"></progress>
-</body>
-</html>
+    })
+    .catch(error => {
+        console.error(error);
+        alert('Failed to upload file.');
+    });
+}
