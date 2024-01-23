@@ -1,63 +1,24 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>File Upload and Download</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            text-align: center;
-            padding: 50px;
-        }
-        .container {
-            background-color: #fff;
-            margin: auto;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            max-width: 500px;
-        }
-        .button {
-            display: inline-block;
-            padding: 10px 20px;
-            margin: 20px 0;
-            border-radius: 5px;
-            background-color: #007bff;
-            color: white;
-            text-decoration: none;
-            font-weight: bold;
-        }
-        .upload-form {
-            margin-top: 20px;
-        }
-        .upload-form input[type="file"] {
-            margin-bottom: 10px;
-        }
-        .upload-form input[type="submit"] {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            background-color: #28a745;
-            color: white;
-            cursor: pointer;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>File Upload and Download</h1>
-        <a href="YOUR_DOWNLOAD_LINK" class="button">Download File</a>
-        
-        <div class="upload-form">
-            <form action="YOUR_S3_BUCKET_URL" method="post" enctype="multipart/form-data">
-                <!-- Additional fields can be added here based on your S3 bucket configuration -->
-                <input type="file" name="file">
-                <input type="submit" value="Upload File">
-            </form>
-        </div>
-    </div>
-</body>
-</html>
+document.getElementById("uploadForm").addEventListener("submit", function(event){
+    event.preventDefault();
 
+    // Fetch API to submit the form data
+    fetch(this.action, {
+        method: 'POST',
+        body: new FormData(this)
+    })
+    .then(response => {
+        if(response.ok) {
+            return response.text();
+        } else {
+            throw new Error('Upload failed');
+        }
+    })
+    .then(data => {
+        // Display success message
+        alert("File uploaded successfully.");
+    })
+    .catch(error => {
+        // Display error message
+        alert("Failed to upload file.");
+    });
+});
