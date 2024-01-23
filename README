@@ -1,22 +1,45 @@
-// Existing script remains the same up to the fetch call...
+// CloudFront distribution domain
+const distributionDomain = 'https://qwerty.domain.cloudfront.net/upload';
 
-// Upload file
-fetch(signedUrl, {
-    method: 'PUT',
-    headers: {
-        "Content-Type": file.type
-    },
-    body: file
-})
-.then(response => {
-    if(response.ok) {
+// Get file input
+const fileInput = document.getElementById('fileUpload');
+let file;
+
+// Assign uploaded file
+fileInput.addEventListener('change', (e) => {
+    file = e.target.files[0];
+});
+
+// Upload button click handler
+const uploadButton = document.getElementById('uploadButton');
+uploadButton.addEventListener('click', uploadToCloudFront);
+
+// Upload function
+async function uploadToCloudFront() {
+    try {
+        // Generate unique filename
+        const fileName = file.name;
+        
+        // Create signed URL
+        const signedUrl = `${distributionDomain}/${fileName}`;
+
+        // Upload file
+        const response = await fetch(signedUrl, {
+            method: 'PUT',
+            headers: {
+                "Content-Type": file.type
+            },
+            body: file
+        });
+
+        // Check response
+        if (!response.ok) {
+            throw new Error('Upload failed');
+        }
         console.log('File uploaded!');
         alert('File uploaded successfully!');
-    } else {
-        throw new Error('Upload failed');
+    } catch (error) {
+        console.error(error);
+        alert('Failed to upload file.');
     }
-})
-.catch(error => {
-    console.error(error);
-    alert('Failed to upload file.');
-});
+}
