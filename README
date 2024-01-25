@@ -1,3 +1,13 @@
-document.getElementById('downloadButton').addEventListener('click', function() {
-    window.location.href = '/download'; // URL to trigger the download
-});
+# Removed get_latest_version function and dynamic version fetching
+
+LATEST_VERSION="v0.8.3"  # Hardcoded version
+
+echo "Using hardcoded version number: $LATEST_VERSION"
+
+BASEURL="https://github.com/cyberark/summon/releases/download/"
+URL="${BASEURL}${LATEST_VERSION}/summon-${DISTRO}-amd64.tar.gz"
+
+ZIP_PATH="${tmp_dir}/summon.tar.gz"
+do_download ${URL} ${ZIP_PATH}
+
+# The rest of the installation steps remain unchanged
