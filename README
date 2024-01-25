@@ -1,5 +1,5 @@
 get_latest_version() {
-    local LATEST_VERSION_URL="https://github.com/cyberark/summon/releases/latest"
+    local LATEST_VERSION_URL="https://github.com/cyberark/summon-aws-secrets/releases/latest"
 
     # Use curl to follow the redirect and get the final URL
     local final_url=$(curl -Ls -o /dev/null -w %{url_effective} "$LATEST_VERSION_URL")
