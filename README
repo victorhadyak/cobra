@@ -1,13 +1,12 @@
-# Removed get_latest_version function and dynamic version fetching
+get_latest_version() {
+    local LATEST_VERSION_URL="https://github.com/cyberark/summon-aws-secrets/releases/latest"
 
-LATEST_VERSION="v0.8.3"  # Hardcoded version
+    # Use curl to follow the redirect and get the final URL
+    local final_url=$(curl -Ls -o /dev/null -w %{url_effective} "$LATEST_VERSION_URL")
 
-echo "Using hardcoded version number: $LATEST_VERSION"
+    # Extract the version tag from the final URL
+    local version=$(echo $final_url | sed -E 's#.*/tag/v(.*)#\1#')
 
-BASEURL="https://github.com/cyberark/summon/releases/download/"
-URL="${BASEURL}${LATEST_VERSION}/summon-${DISTRO}-amd64.tar.gz"
+    echo "$version"
+}
 
-ZIP_PATH="${tmp_dir}/summon.tar.gz"
-do_download ${URL} ${ZIP_PATH}
-
-# The rest of the installation steps remain unchanged
