@@ -10,3 +10,14 @@ get_latest_version() {
     echo "$version"
 }
 
+get_latest_version() {
+    local LATEST_VERSION_URL="https://github.com/cyberark/summon-aws-secrets/releases/latest"
+
+    # Use curl to follow the redirect and get the final URL
+    local final_url=$(curl -Ls -o /dev/null -w %{url_effective} "$LATEST_VERSION_URL")
+
+    # Extract the version tag from the final URL, including the 'v' prefix
+    local version=$(echo $final_url | sed -E 's#.*/tag/(v.*)#\1#')
+
+    echo "$version"
+}
