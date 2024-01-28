@@ -10,17 +10,14 @@ def convert_timestamp(timestamp_millis):
 
 def process_file(input_file_path, output_file_path):
     with open(input_file_path, 'r') as infile, open(output_file_path, 'w') as outfile:
-        for line in infile:
-            try:
-                log_entry = json.loads(line)
-                if 'Time' in log_entry:
-                    log_entry['Time'] = convert_timestamp(log_entry['Time'])
-                json.dump(log_entry, outfile)
-                outfile.write('\n')
-            except json.JSONDecodeError:
-                print("Error decoding JSON from line:", line)
+        data = json.load(infile)  # Load the entire JSON array from the file
+        for log_entry in data:
+            if 'Time' in log_entry:
+                log_entry['Time'] = convert_timestamp(log_entry['Time'])
+        json.dump(data, outfile, indent=4)  # Write the modified array back to the file
 
 # Replace with your file paths
 input_file_path = 'path_to_your_input_file.json'
 output_file_path = 'path_to_your_output_file.json'
 process_file(input_file_path, output_file_path)
+
