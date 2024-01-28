@@ -1,11 +1,24 @@
-get_latest_version() {
-    local LATEST_VERSION_URL="https://github.com/cyberark/summon-aws-secrets/releases/latest"
+import json
+import datetime
 
-    # Use curl to follow the redirect and get the final URL
-    local final_url=$(curl -Ls -o /dev/null -w %{url_effective} "$LATEST_VERSION_URL")
+def convert_timestamp(timestamp_millis):
+    # Convert milliseconds to seconds
+    timestamp_secs = int(timestamp_millis) / 1000
+    # Convert to datetime object
+    dt_object = datetime.datetime.fromtimestamp(timestamp_secs)
+    return dt_object.strftime("%Y-%m-%d %H:%M:%S")
 
-    # Extract the version tag from the final URL, including the 'v' prefix
-    local version=$(echo $final_url | sed -E 's#.*/tag/(v.*)#\1#')
+def process_file(file_path):
+    with open(file_path, 'r') as file:
+        for line in file:
+            try:
+                log_entry = json.loads(line)
+                if 'Time' in log_entry:
+                    log_entry['Time'] = convert_timestamp(log_entry['Time'])
+                print(json.dumps(log_entry, indent=4))
+            except json.JSONDecodeError:
+                print("Error decoding JSON from line:", line)
 
-    echo "$version"
-}
+# Replace with your file path
+file_path = 'path_to_your_log_file.json'
+process_file(file_path)
