@@ -1,1 +1,27 @@
+#!/bin/bash
+
+# Execute the command and get the output
+output=$(cluster list --cluster-group stage --json | jq -r '.[].clusterName')
+
+# Initialize clustersValue variable
+clustersValue=""
+
+# Process each line of output to append "-dev" and format as required
+while IFS= read -r line; do
+    clustersValue+="'${line}-dev',"
+done <<< "$output"
+
+# Remove the trailing comma
+clustersValue=${clustersValue%,}
+
+# Add double quotes around the entire string
+clustersValue="\"${clustersValue}\""
+
+# Create the YAML content
+yamlContent="clusters: ${clustersValue}"
+
+# Write the YAML content to a file
+echo -e "$yamlContent" > newclusterfile.yaml
+
+echo "YAML content written to newclusterfile.yaml"
 
