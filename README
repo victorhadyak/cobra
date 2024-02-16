@@ -1,27 +1,16 @@
-#!/bin/bash
+// Simulate the line read from the file
+String line = "datacenters:  \"'dc-dev','dc2-dev'\""
 
-# Execute the command and get the output
-output=$(cluster list --cluster-group stage --json | jq -r '.[].clusterName')
+// Extract the value part after the colon, which contains the list of datacenters
+String datacentersValue = line.split(":")[1].trim()
 
-# Initialize clustersValue variable
-clustersValue=""
+// Remove the leading and trailing quotes from the value
+datacentersValue = datacentersValue.replaceAll(/^\"|\"$/, "").trim()
 
-# Process each line of output to append "-dev" and format as required
-while IFS= read -r line; do
-    clustersValue+="'${line}-dev',"
-done <<< "$output"
+// Replace ',' with ', ' to ensure there is a space after each comma
+datacentersValue = datacentersValue.replaceAll(",", ", ")
 
-# Remove the trailing comma
-clustersValue=${clustersValue%,}
+// Now split the string into an array, remove the single quotes around each datacenter, and trim any spaces
+List<String> datacenters = datacentersValue.split(",").collect { it.trim().replaceAll(/^'|'$/, "") }
 
-# Add double quotes around the entire string
-clustersValue="\"${clustersValue}\""
-
-# Create the YAML content
-yamlContent="clusters: ${clustersValue}"
-
-# Write the YAML content to a file
-echo -e "$yamlContent" > newclusterfile.yaml
-
-echo "YAML content written to newclusterfile.yaml"
-
+return datacenters
