@@ -1,16 +1,1 @@
-// Simulate the line read from the file
-String line = "datacenters:  \"'dc-dev','dc2-dev'\""
 
-// Extract the value part after the colon, which contains the list of datacenters
-String datacentersValue = line.split(":")[1].trim()
-
-// Remove the leading and trailing quotes from the value
-datacentersValue = datacentersValue.replaceAll(/^\"|\"$/, "").trim()
-
-// Replace ',' with ', ' to ensure there is a space after each comma
-datacentersValue = datacentersValue.replaceAll(",", ", ")
-
-// Now split the string into an array, remove the single quotes around each datacenter, and trim any spaces
-List<String> datacenters = datacentersValue.split(",").collect { it.trim().replaceAll(/^'|'$/, "") }
-
-return datacenters
