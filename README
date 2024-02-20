@@ -1,8 +1,14 @@
-terraform/
+/terraform
 │
 ├── main.tf
 ├── outputs.tf
 ├── variables.tf
+│
+├── website_content
+│   ├── index.html
+│   ├── upload/
+│   └── download/
+│       └── testfile.zip
 │
 └── modules/
     ├── s3/
@@ -14,6 +20,7 @@ terraform/
         ├── main.tf
         ├── outputs.tf
         └── variables.tf
+
 
 
 module "s3_website" {
