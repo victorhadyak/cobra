@@ -1,1 +1,176 @@
+terraform/
+│
+├── main.tf
+├── outputs.tf
+├── variables.tf
+│
+└── modules/
+    ├── s3/
+    │   ├── main.tf
+    │   ├── outputs.tf
+    │   └── variables.tf
+    │
+    └── cloudfront/
+        ├── main.tf
+        ├── outputs.tf
+        └── variables.tf
+
+
+module "s3_website" {
+  source          = "./modules/s3"
+  bucket_name     = var.bucket_name
+  index_document  = var.index_document
+  error_document  = var.error_document
+  index_file_path = var.index_file_path
+  cloudfront_oai  = module.cloudfront_distribution.cloudfront_oai
+}
+
+module "cloudfront_distribution" {
+  source              = "./modules/cloudfront"
+  s3_bucket_name      = var.bucket_name
+  s3_bucket_website_endpoint = module.s3_website.website_endpoint
+}
+
+
+variable "bucket_name" {
+  description = "The name of the S3 bucket to create for the website."
+}
+
+variable "index_document" {
+  description = "The index document of the S3 website."
+}
+
+variable "error_document" {
+  description = "The error document of the S3 website."
+}
+
+variable "index_file_path" {
+  description = "Path to the index.html file to upload to S3."
+}
+
+
+output "s3_bucket_name" {
+  value = module.s3_website.bucket_name
+}
+
+output "s3_bucket_website_endpoint" {
+  value = module.s3_website.website_endpoint
+}
+
+output "cloudfront_distribution_id" {
+  value = module.cloudfront_distribution.distribution_id
+}
+
+output "cloudfront_distribution_domain_name" {
+  value = module.cloudfront_distribution.distribution_domain_name
+}
+
+
+resource "aws_s3_bucket" "bucket" {
+  bucket = var.bucket_name
+  acl    = "public-read"
+
+  website {
+    index_document = var.index_document
+    error_document = var.error_document
+  }
+}
+
+resource "aws_s3_bucket_object" "website_index" {
+  bucket       = aws_s3_bucket.bucket.id
+  key          = "index.html"
+  source       = var.index_file_path
+  content_type = "text/html"
+}
+
+resource "aws_s3_bucket_policy" "bucket_policy" {
+  bucket = aws_s3_bucket.bucket.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action    = "s3:GetObject"
+      Effect    = "Allow"
+      Resource  = "${aws_s3_bucket.bucket.arn}/*"
+      Principal = {"AWS": "arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${var.cloudfront_oai}"}
+    }]
+  })
+}
+
+
+variable "bucket_name" {}
+variable "index_document" {}
+variable "error_document" {}
+variable "index_file_path" {}
+variable "cloudfront_oai" {}
+
+
+output "bucket_name" {
+  value = aws_s3_bucket.bucket.bucket
+}
+
+output "website_endpoint" {
+  value = aws_s3_bucket.bucket.website_endpoint
+}
+
+resource "aws_cloudfront_origin_access_identity" "oai" {
+  comment = "OAI for S3 Website ${var.s3_bucket_name}"
+}
+
+resource "aws_cloudfront_distribution" "distribution" {
+  origin {
+    domain_name = var.s3_bucket_website_endpoint
+    origin_id   = "S3-${var.s3_bucket_name}"
+
+    s3_origin_config {
+      origin_access_identity = "origin-access-identity/cloudfront/${aws_cloudfront_origin_access_identity.oai.id}"
+    }
+  }
+
+  enabled             = true
+  default_root_object = "index.html"
+
+  default_cache_behavior {
+    allowed_methods  = ["GET", "HEAD"]
+    cached_methods   = ["GET", "HEAD"]
+    target_origin_id = "S3-${var.s3_bucket_name}"
+
+    forwarded_values {
+      query_string = false
+      cookies {
+        forward = "none"
+      }
+    }
+
+    viewer_protocol_policy = "redirect-to-https"
+  }
+
+  price_class = "PriceClass_100"
+
+  restrictions {
+    geo_restriction {
+      restriction_type = "none"
+    }
+  }
+
+  viewer_certificate {
+    cloudfront_default_certificate = true
+  }
+}
+
+
+variable "s3_bucket_name" {}
+variable "s3_bucket_website_endpoint" {}
+
+
+output "distribution_id" {
+  value = aws_cloudfront_distribution.distribution.id
+}
+
+output "distribution_domain_name" {
+  value = aws_cloudfront_distribution.distribution.domain_name
+}
+
+output "cloudfront_oai" {
+  value = aws_cloudfront_origin_access_identity.oai.id
+}
 
