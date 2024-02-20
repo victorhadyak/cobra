@@ -21,6 +21,22 @@
         ├── outputs.tf
         └── variables.tf
 
+resource "aws_s3_bucket_object" "upload_placeholder" {
+  bucket       = aws_s3_bucket.bucket.id
+  key          = "upload/.placeholder"
+  content_type = "text/plain"
+  content      = "This is a placeholder file to ensure the upload directory exists."
+}
+
+module "s3_website" {
+  source              = "./modules/s3"
+  bucket_name         = var.bucket_name
+  index_document      = var.index_document
+  error_document      = var.error_document
+  index_file_path     = "${path.module}/website_content/index.html"
+  download_file_path  = "${path.module}/website_content/download/testfile.zip"
+  cloudfront_oai      = module.cloudfront_distribution.cloudfront_oai
+}
 
 
 module "s3_website" {
