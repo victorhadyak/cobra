@@ -1,199 +1,64 @@
-/terraform
-│
-├── main.tf
-├── outputs.tf
-├── variables.tf
-│
-├── website_content
-│   ├── index.html
-│   ├── upload/
-│   └── download/
-│       └── testfile.zip
-│
-└── modules/
-    ├── s3/
-    │   ├── main.tf
-    │   ├── outputs.tf
-    │   └── variables.tf
-    │
-    └── cloudfront/
-        ├── main.tf
-        ├── outputs.tf
-        └── variables.tf
+prepend environment-specific prefixes (like dev or prod) to the names of your S3 bucket and CloudFront distribution based on a parameter provided at the start of your Jenkins job, you can modify your Terraform configuration to accept an environment variable. This variable can then be used to construct the names of your resources dynamically.
 
-resource "aws_s3_bucket_object" "upload_placeholder" {
-  bucket       = aws_s3_bucket.bucket.id
-  key          = "upload/.placeholder"
-  content_type = "text/plain"
-  content      = "This is a placeholder file to ensure the upload directory exists."
+Step 1: Define the Environment Variable in Terraform
+In your root Terraform configuration, define a new variable in variables.tf to hold the environment prefix:
+
+hcl
+Copy code
+variable "environment" {
+  description = "The deployment environment (e.g., 'dev', 'prod')"
+  type        = string
 }
+Step 2: Modify Resource Names to Include the Environment Prefix
+Adjust the names of your S3 bucket and CloudFront distribution in your Terraform modules to incorporate this environment variable. Since S3 bucket names need to be globally unique, prefixing them with environment names is a common practice.
 
-module "s3_website" {
-  source              = "./modules/s3"
-  bucket_name         = var.bucket_name
-  index_document      = var.index_document
-  error_document      = var.error_document
-  index_file_path     = "${path.module}/website_content/index.html"
-  download_file_path  = "${path.module}/website_content/download/testfile.zip"
-  cloudfront_oai      = module.cloudfront_distribution.cloudfront_oai
-}
-
-
-module "s3_website" {
-  source          = "./modules/s3"
-  bucket_name     = var.bucket_name
-  index_document  = var.index_document
-  error_document  = var.error_document
-  index_file_path = var.index_file_path
-  cloudfront_oai  = module.cloudfront_distribution.cloudfront_oai
-}
-
-module "cloudfront_distribution" {
-  source              = "./modules/cloudfront"
-  s3_bucket_name      = var.bucket_name
-  s3_bucket_website_endpoint = module.s3_website.website_endpoint
-}
-
-
-variable "bucket_name" {
-  description = "The name of the S3 bucket to create for the website."
-}
-
-variable "index_document" {
-  description = "The index document of the S3 website."
-}
-
-variable "error_document" {
-  description = "The error document of the S3 website."
-}
-
-variable "index_file_path" {
-  description = "Path to the index.html file to upload to S3."
-}
-
-
-output "s3_bucket_name" {
-  value = module.s3_website.bucket_name
-}
-
-output "s3_bucket_website_endpoint" {
-  value = module.s3_website.website_endpoint
-}
-
-output "cloudfront_distribution_id" {
-  value = module.cloudfront_distribution.distribution_id
-}
-
-output "cloudfront_distribution_domain_name" {
-  value = module.cloudfront_distribution.distribution_domain_name
-}
-
-
+Example for S3 Bucket Name in modules/s3/main.tf:
+hcl
+Copy code
 resource "aws_s3_bucket" "bucket" {
-  bucket = var.bucket_name
+  bucket = "${var.environment}-${var.bucket_name}"
   acl    = "public-read"
-
-  website {
-    index_document = var.index_document
-    error_document = var.error_document
-  }
+  ...
 }
+Example for CloudFront Distribution Comment in modules/cloudfront/main.tf:
+While CloudFront distribution names don't need to be unique, you might still want to differentiate them in some way, such as through tags or comments.
 
-resource "aws_s3_bucket_object" "website_index" {
-  bucket       = aws_s3_bucket.bucket.id
-  key          = "index.html"
-  source       = var.index_file_path
-  content_type = "text/html"
-}
-
-resource "aws_s3_bucket_policy" "bucket_policy" {
-  bucket = aws_s3_bucket.bucket.id
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Action    = "s3:GetObject"
-      Effect    = "Allow"
-      Resource  = "${aws_s3_bucket.bucket.arn}/*"
-      Principal = {"AWS": "arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${var.cloudfront_oai}"}
-    }]
-  })
-}
-
-
-variable "bucket_name" {}
-variable "index_document" {}
-variable "error_document" {}
-variable "index_file_path" {}
-variable "cloudfront_oai" {}
-
-
-output "bucket_name" {
-  value = aws_s3_bucket.bucket.bucket
-}
-
-output "website_endpoint" {
-  value = aws_s3_bucket.bucket.website_endpoint
-}
-
-resource "aws_cloudfront_origin_access_identity" "oai" {
-  comment = "OAI for S3 Website ${var.s3_bucket_name}"
-}
-
+hcl
+Copy code
 resource "aws_cloudfront_distribution" "distribution" {
-  origin {
-    domain_name = var.s3_bucket_website_endpoint
-    origin_id   = "S3-${var.s3_bucket_name}"
+  ...
+  tags = {
+    Name = "${var.environment}-${var.s3_bucket_name}"
+  }
+  comment = "${var.environment} CloudFront Distribution for ${var.s3_bucket_name}"
+}
+Step 3: Pass the Environment Parameter from Jenkins to Terraform
+When you configure your Jenkins job, you'll add a choice parameter that allows you to select or specify the environment (e.g., dev, prod). In the build step where you call Terraform, you will pass this parameter to Terraform using the -var option.
 
-    s3_origin_config {
-      origin_access_identity = "origin-access-identity/cloudfront/${aws_cloudfront_origin_access_identity.oai.id}"
+Jenkins Pipeline Example:
+In your Jenkinsfile or pipeline configuration, add a parameterized build step:
+
+groovy
+Copy code
+pipeline {
+    agent any
+    parameters {
+        choice(name: 'ENVIRONMENT', choices: ['dev', 'prod'], description: 'Select the deployment environment')
     }
-  }
-
-  enabled             = true
-  default_root_object = "index.html"
-
-  default_cache_behavior {
-    allowed_methods  = ["GET", "HEAD"]
-    cached_methods   = ["GET", "HEAD"]
-    target_origin_id = "S3-${var.s3_bucket_name}"
-
-    forwarded_values {
-      query_string = false
-      cookies {
-        forward = "none"
-      }
+    stages {
+        stage('Deploy') {
+            steps {
+                script {
+                    sh "terraform apply -auto-approve -var='environment=${params.ENVIRONMENT}'"
+                }
+            }
+        }
     }
-
-    viewer_protocol_policy = "redirect-to-https"
-  }
-
-  price_class = "PriceClass_100"
-
-  restrictions {
-    geo_restriction {
-      restriction_type = "none"
-    }
-  }
-
-  viewer_certificate {
-    cloudfront_default_certificate = true
-  }
 }
+This script snippet shows how to pass the ENVIRONMENT parameter selected in Jenkins to Terraform, which then uses it to prefix resource names accordingly.
 
+Step 4: Adjust Terraform Module Variables
+Ensure that your Terraform modules (s3 and cloudfront) have the environment variable defined in their respective variables.tf files if they are using it directly, or ensure the root module passes the environment value to them correctly.
 
-variable "s3_bucket_name" {}
-variable "s3_bucket_website_endpoint" {}
-
-
-output "distribution_id" {
-  value = aws_cloudfront_distribution.distribution.id
-}
-
-output "distribution_domain_name" {
-  value = aws_cloudfront_distribution.distribution.domain_name
-}
-
-output "cloudfront_oai" {
-  value = aws_cloudfront_origin_access_identity.oai.id
-}
-
+Conclusion
+By following these steps, you integrate environment-specific naming into your infrastructure deployment process, allowing for clear differentiation between resources used in different environments, such as development and production. This setup not only helps in organizing resources but also enhances clarity when managing them across 
