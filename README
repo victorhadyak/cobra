@@ -1,1 +1,100 @@
 
+When automating the deployment of your website with Terraform and integrating with a CI/CD pipeline like Jenkins, dynamically updating the CloudFront URL in your index.html (or any HTML file) is a common requirement. Since the CloudFront distribution URL is known only after the distribution is created or updated, you'll need a mechanism to inject this URL into your HTML file during the deployment process. Here's how you can approach it:
+
+1. Output the CloudFront URL with Terraform
+First, ensure that your Terraform configuration outputs the CloudFront distribution URL. In your Terraform configuration (main.tf or wherever you define the CloudFront resource), add an output for the distribution's domain name:
+
+hcl
+Copy code
+output "cloudfront_distribution_url" {
+  value = aws_cloudfront_distribution.my_distribution.domain_name
+}
+2. Capture the Output in Jenkins
+After running terraform apply, capture the output of the CloudFront distribution URL using Terraform output command in your Jenkins pipeline:
+
+groovy
+Copy code
+stage('Get CloudFront URL') {
+    steps {
+        script {
+            env.CLOUDFRONT_URL = sh(script: "terraform output -raw cloudfront_distribution_url", returnStdout: true).trim()
+        }
+    }
+}
+3. Update the HTML File
+Before deploying your website content to S3 (or wherever it's hosted), use a script to insert the CloudFront URL into your index.html. You can achieve this by placing a placeholder within your HTML that can be replaced with the actual URL during the deployment process.
+
+For example, in your index.html, you might have:
+
+html
+Copy code
+<script src="%%CLOUDFRONT_URL%%/script.js"></script>
+In your Jenkins pipeline, add a step to replace %%CLOUDFRONT_URL%% with the actual URL:
+
+groovy
+Copy code
+stage('Prepare Website') {
+    steps {
+        script {
+            // Replace placeholder with actual CloudFront URL in index.html
+            sh "sed -i 's|%%CLOUDFRONT_URL%%|${env.CLOUDFRONT_URL}|g' website/index.html"
+        }
+    }
+}
+4. Deploy the Updated HTML
+After updating the index.html, proceed with deploying the website content to S3 or any other hosting service as part of your Jenkins pipeline.
+
+Additional Considerations
+Version Control: Be cautious about directly modifying tracked files in your repository during the build process. Consider copying index.html to a temporary location or ensuring that changes are not pushed back to your source repository unintentionally.
+Multiple Environments: If you deploy to multiple environments (e.g., staging, production), ensure that the correct CloudFront URL is used for each. This may involve using different Terraform state files, workspaces, or variable configurations to manage environment-specific resources.
+By following these steps, you can dynamically inject environment-specific URLs (like a CloudFront distribution URL) into your website content during the deployment process, ensuring that your automated deployments are both flexible and maintainable.
+
+pipeline {
+    agent any
+    environment {
+        VERSION = "1.0.${env.BUILD_NUMBER}"
+    }
+    stages {
+        stage('Prepare') {
+            steps {
+                script {
+                    // Inject version into index.html or a separate version file
+                    sh "echo 'Version: ${env.VERSION}' > website/version.txt"
+                }
+            }
+        }
+        // Further stages for Terraform apply, etc.
+    }
+}
+Step 3: Environment Selection via Jenkins Job Parameter
+In your Jenkins job, you can add a choice parameter to select the deployment environment. This parameter can then be used in your Terraform scripts to determine which environment configuration to apply (e.g., dev or prod).
+
+Jenkins Choice Parameter: Add a choice parameter named ENVIRONMENT with options like dev and prod.
+
+Terraform Configuration: Use Terraform workspaces or environment-specific variable files (e.g., dev.tfvars, prod.tfvars) to manage different environments. Your Jenkins script can switch contexts or apply the appropriate variable file based on the ENVIRONMENT parameter.
+
+Example Jenkins stage for Terraform apply:
+
+groovy
+Copy code
+stage('Deploy') {
+    steps {
+        script {
+            // Switch Terraform workspace based on the selected environment
+            sh "terraform workspace select ${params.ENVIRONMENT} || terraform workspace new ${params.ENVIRONMENT}"
+            sh "terraform apply -var-file=${params.ENVIRONMENT}.tfvars -auto-approve"
+        }
+    }
+}
+Step 4: Feedback via Email Notification
+After a successful deployment, Jenkins can send an email notification with the deployed version and environment details. Configure Jenkins to use an email notification system (e.g., through the Email Extension Plugin) and add a post-build action or a pipeline stage to send the email.
+
+groovy
+Copy code
+post {
+    success {
+        mail to: 'team@example.com',
+             subject: "Deployment Successful",
+             body: "Deployed version ${env.VERSION} to ${params.ENVIRONMENT}."
+    }
+}
