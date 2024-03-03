@@ -1,30 +1,36 @@
-pipeline {
-    agent any
-
-    stages {
-        // Previous stages...
-
-        stage('Process Terraform Outputs') {
-            steps {
-                script {
-                    // Assuming output.txt is in the current workspace directory
-                    if (fileExists('output.txt')) {
-                        // Example: Extract the CloudFront distribution name
-                        def cloudFrontName = sh(script: "grep 'distribution_name' output.txt | cut -d ' ' -f 2", returnStdout: true).trim()
-                        echo "CloudFront Distribution Name: ${cloudFrontName}"
-
-                        // Proceed with `sed` to modify files as needed
-                        // Example: sh "sed -i 's/PLACEHOLDER/${cloudFrontName}/g' somefile.txt"
-
-                        // Use aws cli to copy modified file to S3
-                        // Example: sh "aws s3 cp somefile.txt s3://yourbucket/path/"
-                    } else {
-                        error "output.txt does not exist in the workspace."
-                    }
-                }
-            }
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "s3:ListBucket"
+            ],
+            "Resource": [
+                "arn:aws:s3:::my-terraform-state-bucket"
+            ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "s3:GetObject",
+                "s3:PutObject",
+                "s3:DeleteObject"
+            ],
+            "Resource": [
+                "arn:aws:s3:::my-terraform-state-bucket/*"
+            ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "dynamodb:GetItem",
+                "dynamodb:PutItem",
+                "dynamodb:DeleteItem"
+            ],
+            "Resource": [
+                "arn:aws:dynamodb:us-east-1:123456789012:table/my-terraform-lock-table"
+            ]
         }
-
-        // Further stages...
-    }
+    ]
 }
