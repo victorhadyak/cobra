@@ -1,5 +1,4 @@
-
-    cmdOutput, err := cmd.Output()
+cmdOutput, err := cmd.Output()
     if err != nil {
         fmt.Printf("Error listing instances in region %s: %s\n", region, err)
         return
@@ -21,10 +20,10 @@
     // Iterate over the parsed instances and print them
     for i, instance := range instances {
         instanceID := instance[0]
-        instanceName := "No Name Tag"
+        instanceName := "No Name Tag" // Default value if no name tag is present
         if len(instance) > 1 && len(instance[1]) > 0 {
             instanceName = instance[1]
         }
-        fmt.Printf("%d. %s (%s)\n", i+1, instanceID, strings.Join(instance[1:], ", "))
+        fmt.Printf("%d. %s (%s)\n", i+1, instanceID, instanceName) // Use instanceName here
     }
 }
