@@ -1,4 +1,4 @@
-cmdOutput, err := cmd.Output()
+ cmdOutput, err := cmd.Output()
     if err != nil {
         fmt.Printf("Error listing instances in region %s: %s\n", region, err)
         return
@@ -11,35 +11,29 @@ cmdOutput, err := cmd.Output()
     }
 
     lines := strings.Split(output, "\n")
-    for i, line := range lines {
-        // Split each line by tabs to separate the instance ID from the Name tag
+    instances := make([][2]string, 0) // To hold instance ID and Name pairs
+    for _, line := range lines {
         parts := strings.Split(line, "\t")
         instanceID := parts[0]
-        instanceName := "No Name Tag"
-        if len(parts) > 1 && parts[1] != "" {
+        instanceName := "No Name Tag" // Default if no name tag is present
+        if len(parts) > 1 {
             instanceName = parts[1]
         }
-        fmt.Printf("%d. %s (%s)\n", i+1, instanceID, instanceName)
-    }
-
-    instances := strings.Fields(output) // Assuming output is space-separated instance IDs
-    fmt.Println("Instances in region:", region)
-    for i, instance := range instances {
-        fmt.Printf("%d. %s\n", i+1, instance)
+        instances = append(instances, [2]string{instanceID, instanceName})
+        fmt.Printf("%d. %s (%s)\n", len(instances), instanceID, instanceName)
     }
 
     fmt.Println("Select an instance by number to connect or enter 0 to exit:")
     var selection int
-    if _, err := fmt.Scanln(&selection); err != nil {
+    _, err = fmt.Scanln(&selection)
+    if err != nil || selection < 1 || selection > len(instances) {
         fmt.Println("Invalid input, exiting.")
         return
     }
 
-	if selection > 0 && selection <= len(instances) {
-		selectedInstanceID := instances[selection-1]
-		fmt.Printf("Connecting to instance %s in region %s...\n", selectedInstanceID, region)
-		connectInstance(selectedInstanceID, region) // This is how you'd call it
-	} else if selection != 0 {
-		fmt.Println("Invalid selection, exiting.")
-	}
+    // Use the corrected slice of instances for connection logic
+    selectedInstanceID := instances[selection-1][0] // Getting the instance ID based on user selection
+    fmt.Printf("Connecting to instance %s (%s) in region %s...\n", selectedInstanceID, instances[selection-1][1], region)
+    // Placeholder for where you'd connect to the selected instance
+    // Ensure connectInstance function or similar logic is implemented to handle the actual connection
 }
