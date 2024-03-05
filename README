@@ -1,36 +1,7 @@
-func listInstancesInRegion(region string) {
-    // Assuming cmd executes correctly, ensure errors and output are handled properly
-    cmd := exec.Command("aws", "ec2", "describe-instances", "--region", region, "--query", "Reservations[*].Instances[*].InstanceId", "--output", "text")
-    cmdOutput, err := cmd.Output()
-    if err != nil {
-        fmt.Printf("Error listing instances in region %s: %s\n", region, err)
-        return
-    }
-
-    output := string(cmdOutput)
-    if output == "" {
-        fmt.Println("No instances found in this region.")
-        return
-    }
-
-    instances := strings.Fields(output) // Assuming output is space-separated instance IDs
-    fmt.Println("Instances in region:", region)
-    for i, instance := range instances {
-        fmt.Printf("%d. %s\n", i+1, instance)
-    }
-
-    fmt.Println("Select an instance by number to connect or enter 0 to exit:")
-    var selection int
-    if _, err := fmt.Scanln(&selection); err != nil {
-        fmt.Println("Invalid input, exiting.")
-        return
-    }
-
-    if selection > 0 && selection <= len(instances) {
-        // Placeholder for connection logic, replace with actual connection function
-        fmt.Printf("Connecting to instance %s...\n", instances[selection-1])
-        // Here, call your function to connect to the selected instance.
-    } else if selection != 0 {
-        fmt.Println("Invalid selection, exiting.")
-    }
+if selection > 0 && selection <= len(instances) {
+    selectedInstanceID := instances[selection-1]
+    fmt.Printf("Connecting to instance %s in region %s...\n", selectedInstanceID, region)
+    connectInstance(selectedInstanceID, region) // This is how you'd call it
+} else if selection != 0 {
+    fmt.Println("Invalid selection, exiting.")
 }
