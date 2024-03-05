@@ -1,1 +1,76 @@
+// connectInstance connects to an EC2 instance; if the region is not specified, it tries to find the region
+func connectInstance(instanceID, region string) {
+    if region == "" {
+        fmt.Println("No region specified. Please specify a region with --region or use list-regions to select.")
+        return
+    }
 
+    fmt.Printf("Connecting to instance %s in region %s...\n", instanceID, region)
+    // Here, integrate the AWS CLI or SDK call to start an SSM session
+    // This is a placeholder for the connection logic
+}
+
+// listRegionsAndInstances lists AWS regions, allows the user to select one, and then lists instances in that region
+func listRegionsAndInstances() {
+    regions := listRegions()
+    fmt.Println("Please select a region by number:")
+    for i, region := range regions {
+        fmt.Printf("%d. %s\n", i+1, region)
+    }
+
+    reader := bufio.NewReader(os.Stdin)
+    fmt.Print("Enter number: ")
+    choice, _ := reader.ReadString('\n')
+    choice = strings.TrimSpace(choice)
+    index, err := strconv.Atoi(choice)
+    if err != nil || index < 1 || index > len(regions) {
+        fmt.Println("Invalid selection.")
+        return
+    }
+
+    selectedRegion := regions[index-1]
+    listInstancesInRegion(selectedRegion)
+}
+
+// listRegions uses the AWS CLI to list all available AWS regions
+func listRegions() []string {
+    cmd := exec.Command("aws", "ec2", "describe-regions", "--query", "Regions[*].RegionName", "--output", "json")
+    var out bytes.Buffer
+    cmd.Stdout = &out
+    err := cmd.Run()
+    if err != nil {
+        fmt.Println("Error listing regions:", err)
+        return nil
+    }
+
+    var regions []string
+    if err := json.Unmarshal(out.Bytes(), &regions); err != nil {
+        fmt.Println("Error parsing region output:", err)
+        return nil
+    }
+
+    return regions
+}
+
+// listInstancesInRegion lists EC2 instances in the specified region
+func listInstancesInRegion(region string) {
+    cmd := exec.Command("aws", "ec2", "describe-instances", "--region", region, "--query", "Reservations[*].Instances[*].InstanceId", "--output", "text")
+    cmdOutput, err := cmd.Output()
+    if err != nil {
+        fmt.Printf("Error listing instances in region %s: %s\n", region, err)
+        return
+    }
+
+    output := string(cmdOutput)
+    if output == "" {
+        fmt.Println("No instances found in this region.")
+        return
+    }
+
+    instances := strings.Fields(output) // Assuming output is space-separated instance IDs
+    fmt.Println("Instances in region:", region)
+    for i, instance := range instances {
+        fmt.Printf("%d. %s\n", i+1, instance)
+    }
+    // Extend this to allow selecting an instance and connecting
+}
