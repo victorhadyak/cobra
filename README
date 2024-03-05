@@ -1,7 +1,17 @@
-if selection > 0 && selection <= len(instances) {
-    selectedInstanceID := instances[selection-1]
-    fmt.Printf("Connecting to instance %s in region %s...\n", selectedInstanceID, region)
-    connectInstance(selectedInstanceID, region) // This is how you'd call it
-} else if selection != 0 {
-    fmt.Println("Invalid selection, exiting.")
-}
+func listInstancesInRegion(region string) {
+    cmd := exec.Command("aws", "ec2", "describe-instances", "--region", region, "--query", "Reservations[*].Instances[*].[InstanceId, Tags[?Key=='Name'].Value | [0]]", "--output", "text")
+    cmdOutput, err := cmd.Output()
+    if err != nil {
+        fmt.Printf("Error listing instances in region %s: %s\n", region, err)
+        return
+    }
+
+    lines := strings.Split(string(cmdOutput), "\n")
+    for i := 0; i < len(lines); i += 2 {
+        instanceID := lines[i]
+        var instanceName string
+        if i+1 < len(lines) {
+            instanceName = lines[i+1]
+        }
+        fmt.Printf("%d. %s (%s)\n", (i/2)+1, instanceID, instanceName)
+    }
