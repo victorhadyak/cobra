@@ -1,29 +1,36 @@
-func connectInstance(instanceID, region string) {
-    // Generate temporary credentials (this step depends on your specific use case)
-    _, err := generateTemporaryCredentials()
+func listInstancesInRegion(region string) {
+    // Assuming cmd executes correctly, ensure errors and output are handled properly
+    cmd := exec.Command("aws", "ec2", "describe-instances", "--region", region, "--query", "Reservations[*].Instances[*].InstanceId", "--output", "text")
+    cmdOutput, err := cmd.Output()
     if err != nil {
-        fmt.Println("Error generating temporary credentials:", err)
+        fmt.Printf("Error listing instances in region %s: %s\n", region, err)
         return
     }
 
-    // If region is not specified, attempt to find the instance's region
-    if region == "" {
-        fmt.Println("No region specified, searching for the instance across all regions...")
-        region, err = findInstanceRegion(instanceID) // Implement or use existing logic to find the region
-        if err != nil {
-            fmt.Println("Error finding instance:", err)
-            return
-        }
-        fmt.Printf("Instance %s found in region %s\n", instanceID, region)
-    } else {
-        fmt.Printf("Region specified: %s\n", region)
+    output := string(cmdOutput)
+    if output == "" {
+        fmt.Println("No instances found in this region.")
+        return
     }
 
-    // Connect to the instance using the found or specified region
-    fmt.Printf("Connecting to instance %s in region %s...\n", instanceID, region)
-    err = startSSMSession(instanceID, region) // Use the existing logic to start an SSM session
-    if err != nil {
-        fmt.Println("Error starting SSM session:", err)
+    instances := strings.Fields(output) // Assuming output is space-separated instance IDs
+    fmt.Println("Instances in region:", region)
+    for i, instance := range instances {
+        fmt.Printf("%d. %s\n", i+1, instance)
+    }
+
+    fmt.Println("Select an instance by number to connect or enter 0 to exit:")
+    var selection int
+    if _, err := fmt.Scanln(&selection); err != nil {
+        fmt.Println("Invalid input, exiting.")
         return
+    }
+
+    if selection > 0 && selection <= len(instances) {
+        // Placeholder for connection logic, replace with actual connection function
+        fmt.Printf("Connecting to instance %s...\n", instances[selection-1])
+        // Here, call your function to connect to the selected instance.
+    } else if selection != 0 {
+        fmt.Println("Invalid selection, exiting.")
     }
 }
