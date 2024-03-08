@@ -1,1 +1,4 @@
 
+If I manually reproduced the test from the instance in the US-West-2 region to the same test site, I observed that RBI isolation is occurring but it takes about 50 seconds for the page to load.
+The same behavior occurs when accessing another website (wikipedia.org) and also another RBI test which is running from another AWS region to our test site. This site is also located in AWS and distributed globally by AWS CloudFront.
+We experience the same high latencies during the RBI isolation process. Therefore, the problem must be with the network between our data center and the RBI endpoint or with RBI itself.
