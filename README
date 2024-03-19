@@ -1,1 +1,50 @@
+f I manually reproduced the test from the instance in the US-West-2 region to the same test site, I observed that RBI isolation is occurring but it takes about 50 seconds for the page to load.
+The same behavior occurs when accessing another website (wikipedia.org) and also another RBI test which is running from another AWS region to our test site. This site is also located in AWS and distributed globally by AWS CloudFront.
+We experience the same high latencies during the RBI isolation process. Therefore, the problem must be with the network between our data center and the RBI endpoint or with RBI itself.
+This Go script is designed as a CLI tool for managing AWS EC2 instances across different regions. It uses the Cobra library to structure the CLI, providing structured commands and options. Here's how its components work together:
 
+Main Function (main): Initializes the CLI application, defining the base command (ssm-cli) and adding subcommands (connect and list-regions). Each subcommand is configured with specific behavior, like connecting to an instance or listing regions and instances.
+
+Connecting to an Instance (connectCmd): This subcommand allows users to connect to a specific EC2 instance by ID, optionally specifying the region. If the region is not specified, the script attempts to find the instance's region.
+
+Listing Regions and Instances (listRegionsCmd, listRegions, listInstancesInRegion): These components work together to first list all AWS regions, then allow the user to select a region and list all EC2 instances within it, including their IDs and Name tags.
+
+Generating Temporary Credentials (generateTemporaryCredentials): A mocked-up placeholder for generating temporary AWS credentials. This demonstrates how you might integrate AWS IAM role assumption or temporary credential generation into your CLI tool.
+
+Finding Instance Region (findInstanceRegion): Attempts to determine the region of a given instance ID by querying AWS EC2 service.
+
+Starting an SSM Session (startSSMSession): A placeholder for initiating an SSM session with a specified EC2 instance, demonstrating how you might execute AWS CLI commands or SDK calls within your Go application to interact with AWS services.
+
+The script illustrates how to build a CLI tool for interacting with AWS EC2 instances, integrating AWS CLI commands, handling user input, and organizing functionality into reusable components.
+
+// main initializes the CLI application with two primary commands: connect and list-regions.
+    // rootCmd represents the base command when called without any subcommands.
+    // connectCmd defines the "connect" subcommand to connect to an EC2 instance.
+             // Attempts to connect to the specified instance, using the regionFlag if provided.
+    // Adds a --region flag to specify the AWS region directly.
+ // listRegionsCmd defines the "list-regions" subcommand to list AWS regions and instances within them.
+            // Lists AWS regions and allows the user to select one to list its instances.
+    // Register the subcommands to the root command and execute the CLI.
+// generateTemporaryCredentials generates temporary AWS credentials (mocked function).
+// connectInstance attempts to connect to an EC2 instance by its ID, optionally using a specified region.
+    // Generates temporary credentials, showing how one might integrate AWS credential management.
+// Attempts to find the region of the instance if not specified.
+    // Placeholder for starting an SSM session with the specified instance in the found or specified region.
+// findInstanceRegion attempts to find the AWS region of a specified EC2 instance.
+// Incorrect command corrected: "aws ec2 describe-instances" is used to get the instance region.
+    // The output will be the availability zone, which contains the region name.
+    // Trim the last character from the availability zone to get the region name.
+// startSSMSession starts an AWS Systems Manager (SSM) session for the specified instance.
+    // Example command to start an SSM session; replace with actual implementation.
+// listRegionsAndInstances lists AWS regions and allows the user to select one to list EC2 instances within it.
+    regions := listRegions() // Fetches and sorts AWS regions alphabetically.
+    // Display the sorted regions for user selection.
+    // Prompt the user to select a region.  
+    // Lists instances within the selected region.
+// listRegions fetches and returns a sorted list of all available AWS regions.
+ // Sorts the regions alphabetically.
+// listInstancesInRegion lists the EC2 instances within a specified region.
+        // Holds instance ID and Name pairs for better organization.
+ // Allows user to select an instance for connection or further actions.
+         // Get instance ID based on user selection.
+// This function is expected to connect to the selected instance.f
